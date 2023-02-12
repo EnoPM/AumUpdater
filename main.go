@@ -40,6 +40,42 @@ func main() {
 		Stop()
 		return
 	}
+	executable, err := os.Executable()
+	if err != nil {
+		ShowError(err)
+		Stop()
+		return
+	}
+	updaterPath := fmt.Sprintf("%s%saum-update.exe", BinFolderPath, DS)
+	if !fileExists(updaterPath) {
+		_, err := copyFile(executable, updaterPath)
+		if err != nil {
+			ShowError(err)
+			Stop()
+			return
+		}
+	} else {
+		currentUpdaterMd5, err := getFileMd5(executable)
+		if err != nil {
+			ShowError(err)
+			Stop()
+			return
+		}
+		targetUpdaterMd5, err := getFileMd5(executable)
+		if err != nil {
+			ShowError(err)
+			Stop()
+			return
+		}
+		if currentUpdaterMd5 != targetUpdaterMd5 {
+			_, err := copyFile(executable, updaterPath)
+			if err != nil {
+				ShowError(err)
+				Stop()
+				return
+			}
+		}
+	}
 	release, err := GetLatestRelease(GithubOwner, GithubRepository)
 	if err != nil {
 		ShowError(err)
@@ -104,6 +140,10 @@ func main() {
 		} else {
 			ShowInfo("AmongUsMods is already up to date")
 		}
+	}
+	err = os.Remove(fmt.Sprintf("%s/%s", DownloadFolderPath, asset.Name))
+	if err != nil {
+		ShowError(err)
 	}
 	Stop()
 }
